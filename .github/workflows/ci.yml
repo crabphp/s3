@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CRAB_TEST_S3_ENDPOINT: http://127.0.0.1:9000
+      CRAB_TEST_S3_KEY: crabtest
+      CRAB_TEST_S3_SECRET: crabtestsecret
+    defaults:
+      run:
+        working-directory: s3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: s3
+      # composer.json reads crabphp/framework from ../framework until there is a release.
+      - uses: actions/checkout@v4
+        with:
+          repository: crabphp/framework
+          path: framework
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, simplexml
+          coverage: none
+      # A service container cannot be given MinIO's "server /data", so it is started here.
+      - run: |
+          docker run -d -p 9000:9000 -e MINIO_ROOT_USER=crabtest -e MINIO_ROOT_PASSWORD=crabtestsecret minio/minio server /data
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:9000/minio/health/live && break; sleep 1; done
+      - run: composer install --no-interaction --no-progress
+      - run: composer format:check
+      - run: composer lint
+      - run: vendor/bin/phpunit

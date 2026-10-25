@@ -1,0 +1,42 @@
+{
+    "name": "crabphp/s3",
+    "description": "S3 for the Crab framework: a disk on Amazon S3, Cloudflare R2, MinIO or any service that speaks S3's API, that waits without holding a worker",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "ext-simplexml": "*",
+        "crabphp/framework": "@dev"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.4",
+        "carthage-software/mago": "1.57.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Crab\\S3\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Crab\\S3\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit",
+        "format": "@php vendor/bin/mago fmt",
+        "format:check": "@php vendor/bin/mago fmt --check",
+        "lint": "@php vendor/bin/mago lint"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../framework",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
