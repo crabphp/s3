@@ -33,10 +33,22 @@ final class S3ProviderTest extends TestCase
         $disk->write('avatars/7.png', 'png', 'image/png');
         $request = $http->sent()[0];
         self::assertSame('image/png', $request->getHeaderLine('Content-Type'));
-        self::assertSame('identity', $request->getHeaderLine('Accept-Encoding'));
         self::assertStringStartsWith('AWS4-HMAC-SHA256 Credential=AKID/', $request->getHeaderLine('Authorization'));
         self::assertStringContainsString('/eu-west-1/s3/aws4_request', $request->getHeaderLine('Authorization'));
         self::assertSame('https://photos.s3.eu-west-1.amazonaws.com/avatars/7.png', $disk->url('avatars/7.png'));
+    }
+
+    public function testAFileIsReadAsItIsKeptAndWholeHoweverLarge(): void
+    {
+        $packed = gzencode(str_repeat('photo ', 100));
+        $http = new FakeClient([
+            'GET https://photos.s3.eu-west-1.amazonaws.com/packed.txt' => FakeClient::response(200, $packed, [
+                'Content-Encoding' => 'gzip',
+            ]),
+        ], maxBytes: 16);
+        $disk = $this->disk(['region' => 'eu-west-1'], $http);
+
+        self::assertSame($packed, $disk->contents('packed.txt'));
     }
 
     public function testAnotherServiceIsNamedByItsEndpointWithTheBucketInThePath(): void

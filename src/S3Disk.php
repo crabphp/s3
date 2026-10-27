@@ -102,7 +102,8 @@ final class S3Disk implements Disk
 
     public function read(string $path): StreamInterface
     {
-        $response = $this->send('GET', $this->object($path));
+        // A file is read whole, however large: whoever reads it chose it.
+        $response = $this->send('GET', $this->object($path), maxBytes: PHP_INT_MAX);
         if ($response->getStatusCode() === 404) {
             throw new FileNotFound($path);
         }
@@ -256,6 +257,7 @@ final class S3Disk implements Disk
     /**
      * @param array<string, string> $query
      * @param array<string, string> $headers
+     * @param int|null $maxBytes The most bytes of body the answer may have; null for the client's own limit.
      */
     private function send(
         string $method,
@@ -263,13 +265,20 @@ final class S3Disk implements Disk
         array $query = [],
         array $headers = [],
         string|StreamInterface|null $body = null,
+        ?int $maxBytes = null,
     ): ResponseInterface {
         $headers = $this->signature->headers($method, $this->host, $path, $query, $headers, $this->clock->now());
-        // The bytes as they are kept, not unpacked on the way.
-        $headers['Accept-Encoding'] = 'identity';
         $url = "{$this->scheme}://{$this->host}{$path}" . ($query === [] ? '' : '?' . Signature::encoded($query));
         try {
-            return $this->http->request($method, $url, headers: $headers, body: $body);
+            // The bytes as they are kept, not unpacked on the way, even those kept with a Content-Encoding.
+            return $this->http->request(
+                $method,
+                $url,
+                headers: $headers,
+                body: $body,
+                maxBytes: $maxBytes,
+                decode: false,
+            );
         } catch (ClientExceptionInterface $error) {
             throw new StorageException(
                 "S3 could not be reached for {$method} {$path}: {$error->getMessage()}",

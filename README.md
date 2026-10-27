@@ -83,7 +83,7 @@ A setting the driver does not know, or a missing key, secret or bucket, stops th
 ## How it behaves
 
 - **Writing.** A file is written with one request, which the service makes whole or not at all, up to 5 GB. A stream that cannot say its length is copied to a temporary file first, because S3 must be told the length before the body.
-- **Reading.** `read()` returns once the whole file has arrived, in memory up to 1 MiB and in a temporary file beyond. Bytes are never decompressed on the way. For a large download, hand the client a `temporaryUrl()`.
+- **Reading.** `read()` returns once the whole file has arrived, in memory up to 1 MiB and in a temporary file beyond. Bytes are never decompressed on the way, and `http_client.max_bytes` does not apply: the file is read whatever its size. For a large download, hand the client a `temporaryUrl()`.
 - **Signed URLs.** `temporaryUrl()` and `temporaryUploadUrl()` are signed here, with no request to the service, and last from one second to seven days. An upload URL given a media type requires the client to send it as its `Content-Type`.
 - **Copying.** `copy()` and `move()` copy inside the service, without downloading the file. A copy the service reports as failed after answering 200 is a failure.
 - **Listing.** `files()` reads the bucket a page of 1,000 at a time as you iterate.
