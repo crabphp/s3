@@ -37,10 +37,10 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, simplexml
           coverage: none
-      # A service container cannot be given MinIO's "server /data", so it is started here.
+      # RustFS speaks S3 as MinIO does; MinIO no longer publishes its server image. Pinned, so a new release cannot break CI unseen.
       - run: |
-          docker run -d -p 9000:9000 -e MINIO_ROOT_USER=crabtest -e MINIO_ROOT_PASSWORD=crabtestsecret minio/minio server /data
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:9000/minio/health/live && break; sleep 1; done
+          docker run -d -p 9000:9000 -e RUSTFS_ACCESS_KEY=crabtest -e RUSTFS_SECRET_KEY=crabtestsecret rustfs/rustfs:1.0.4
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:9000/health && break; sleep 1; done
       - run: composer install --no-interaction --no-progress
       - run: composer format:check
       - run: composer lint

@@ -95,7 +95,7 @@ A setting the driver does not know, or a missing key, secret or bucket, stops th
 The tests run against a real service when `CRAB_TEST_S3_ENDPOINT`, `CRAB_TEST_S3_KEY` and `CRAB_TEST_S3_SECRET` are set, and are skipped otherwise:
 
 ```sh
-docker run -d -p 9010:9000 -e MINIO_ROOT_USER=crabtest -e MINIO_ROOT_PASSWORD=crabtestsecret minio/minio server /data
+docker run -d -p 9010:9000 -e RUSTFS_ACCESS_KEY=crabtest -e RUSTFS_SECRET_KEY=crabtestsecret rustfs/rustfs:1.0.4
 CRAB_TEST_S3_ENDPOINT=http://127.0.0.1:9010 CRAB_TEST_S3_KEY=crabtest CRAB_TEST_S3_SECRET=crabtestsecret composer test
 ```
 
