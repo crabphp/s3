@@ -14,13 +14,13 @@ Register the plugin after the framework's, which include the storage it adds a d
 
 ```php
 // app.php
-use App\Plugins\AppPlugin;
+use App\Setup;
 use Crab\S3\S3Plugin;
 
 ->withPlugins([
     S3Plugin::class,
-    AppPlugin::class,
 ])
+->withSetup(Setup::class)
 ```
 
 Then describe the bucket as a disk:

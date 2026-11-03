@@ -15,7 +15,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  * Adds the "s3" driver to storage.disks. Register it in app.php after the
  * framework's plugins:
  *
- *     ->withPlugins([S3Plugin::class, AppPlugin::class])
+ *     ->withPlugins([S3Plugin::class])
  *
  * A disk's settings:
  *
