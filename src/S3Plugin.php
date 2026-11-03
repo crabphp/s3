@@ -6,16 +6,16 @@ namespace Crab\S3;
 
 use Crab\Contracts\Container\Container;
 use Crab\Contracts\HttpClient\Client;
-use Crab\Contracts\Provider;
+use Crab\Contracts\Plugin;
 use Crab\Contracts\Storage\Drivers;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
 /**
  * Adds the "s3" driver to storage.disks. Register it in app.php after the
- * framework's providers:
+ * framework's plugins:
  *
- *     ->withProviders([S3Provider::class, AppProvider::class])
+ *     ->withPlugins([S3Plugin::class, AppPlugin::class])
  *
  * A disk's settings:
  *
@@ -29,7 +29,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  *     token         the session token of temporary credentials
  *     timeout       seconds a request may take; 60
  */
-final class S3Provider implements Provider
+final class S3Plugin implements Plugin
 {
     private const SETTINGS = [
         'key',
@@ -48,7 +48,7 @@ final class S3Provider implements Provider
     {
         if (!$container->has(Drivers::class)) {
             throw new \LogicException(
-                'S3Provider adds a driver to storage: register it after the framework\'s providers, which include StorageProvider.',
+                'S3Plugin adds a driver to storage: register it after the framework\'s plugins, which include StoragePlugin.',
             );
         }
         $container->get(Drivers::class)->add('s3', self::SETTINGS, static function (array $settings, string $name) use (

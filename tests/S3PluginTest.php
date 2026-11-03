@@ -11,9 +11,9 @@ use Crab\Contracts\Storage\Storage;
 use Crab\Contracts\Storage\StorageException;
 use Crab\HttpClient\FakeClient;
 use Crab\S3\S3Disk;
-use Crab\S3\S3Provider;
+use Crab\S3\S3Plugin;
 use Crab\Storage\StorageManager;
-use Crab\Storage\StorageProvider;
+use Crab\Storage\StoragePlugin;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 
@@ -21,7 +21,7 @@ use Psr\Http\Message\RequestInterface;
  * The driver as an application configures it, with requests answered in
  * advance: what the service says that a local one rarely does.
  */
-final class S3ProviderTest extends TestCase
+final class S3PluginTest extends TestCase
 {
     private const DISK = ['driver' => 's3', 'key' => 'AKID', 'secret' => 'secret', 'bucket' => 'photos'];
 
@@ -150,8 +150,8 @@ final class S3ProviderTest extends TestCase
 
     public function testItIsRegisteredAfterTheFrameworksStorage(): void
     {
-        $this->expectExceptionMessage('register it after the framework\'s providers');
-        new App()->register(new S3Provider());
+        $this->expectExceptionMessage('register it after the framework\'s plugins');
+        new App()->register(new S3Plugin());
     }
 
     /**
@@ -160,8 +160,8 @@ final class S3ProviderTest extends TestCase
     private function disk(array $settings = [], ?FakeClient $http = null): S3Disk
     {
         $app = new App(new Config(['storage' => ['disks' => ['cloud' => [...self::DISK, ...$settings]]]]));
-        $app->register(new StorageProvider());
-        $app->register(new S3Provider());
+        $app->register(new StoragePlugin());
+        $app->register(new S3Plugin());
         $app->container->instance(Client::class, $http ?? new FakeClient());
         self::assertSame([], $app->container->get(StorageManager::class)->problems());
         $disk = $app->container->get(Storage::class)->disk('cloud');

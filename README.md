@@ -10,16 +10,16 @@ Use it when files must outlive one machine, when several servers share them, or 
 composer require crabphp/s3
 ```
 
-Register the provider after the framework's, which include the storage it adds a driver to:
+Register the plugin after the framework's, which include the storage it adds a driver to:
 
 ```php
 // app.php
-use App\Providers\AppProvider;
-use Crab\S3\S3Provider;
+use App\Plugins\AppPlugin;
+use Crab\S3\S3Plugin;
 
-->withProviders([
-    S3Provider::class,
-    AppProvider::class,
+->withPlugins([
+    S3Plugin::class,
+    AppPlugin::class,
 ])
 ```
 
