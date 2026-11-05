@@ -305,7 +305,9 @@ final class S3Disk implements Disk
     {
         $body ??= (string) $response->getBody();
         $error = self::xml($body);
-        $said = $error === false ? '' : trim((string) $error->Code . ': ' . (string) $error->Message, ': ');
+        $said = $error === false
+            ? ''
+            : trim(self::xmlText($error, 'Code') . ': ' . self::xmlText($error, 'Message'), ': ');
         throw new StorageException(
             "S3 refused {$action} \"{$path}\" in the bucket \"{$this->bucket}\": "
             . $response->getStatusCode()
@@ -317,5 +319,20 @@ final class S3Disk implements Disk
     private static function xml(string $body): \SimpleXMLElement|false
     {
         return @simplexml_load_string($body, options: LIBXML_NONET);
+    }
+
+    private static function xmlText(\SimpleXMLElement $xml, string $name): string
+    {
+        $value = (string) $xml->{$name};
+        if ($value !== '') {
+            return $value;
+        }
+        foreach ($xml->getDocNamespaces(true) as $namespace) {
+            $value = (string) $xml->children($namespace)->{$name};
+            if ($value !== '') {
+                return $value;
+            }
+        }
+        return '';
     }
 }

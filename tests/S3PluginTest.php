@@ -128,7 +128,7 @@ final class S3PluginTest extends TestCase
         $http = new FakeClient([
             'PUT *' => FakeClient::response(
                 200,
-                '<Error xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Code>InternalError</Code><Message>Try again.</Message></Error>',
+                '<s3:Error xmlns:s3="http://s3.amazonaws.com/doc/2006-03-01/"><s3:Code>InternalError</s3:Code><s3:Message>Try again.</s3:Message></s3:Error>',
             ),
             'DELETE *' => 204,
         ]);
