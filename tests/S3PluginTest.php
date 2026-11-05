@@ -141,6 +141,21 @@ final class S3PluginTest extends TestCase
         }
     }
 
+    public function testAMoveDoesNotDeleteTheSourceWhenCopyReturnsMalformedXml(): void
+    {
+        $http = new FakeClient([
+            'PUT *' => FakeClient::response(200, '<not-a-copy-result/>'),
+            'DELETE *' => 204,
+        ]);
+        $this->expectExceptionMessage('S3 refused COPY "a.txt" in the bucket "photos": 200.');
+
+        try {
+            $this->disk([], $http)->move('a.txt', 'b.txt');
+        } finally {
+            self::assertCount(0, $http->sent('DELETE *'));
+        }
+    }
+
     public function testAListingErrorInA200BodyIsAStorageFailure(): void
     {
         $http = new FakeClient([

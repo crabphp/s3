@@ -171,7 +171,14 @@ final class S3Disk implements Disk
         }
         // A copy can fail after S3 has answered 200, with the error in the body.
         $error = self::xml($body);
-        if ($response->getStatusCode() !== 200 || $error !== false && $error->getName() === 'Error') {
+        if (
+            $response->getStatusCode() !== 200
+            || $error === false
+            || !in_array($error->getName(), ['CopyObjectResult', 'Error'], true)
+        ) {
+            $this->fail($response, 'COPY', $from, $body);
+        }
+        if ($error->getName() === 'Error') {
             $this->fail($response, 'COPY', $from, $body);
         }
     }
