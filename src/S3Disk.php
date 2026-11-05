@@ -83,7 +83,10 @@ final class S3Disk implements Disk
             while (!$contents->eof()) {
                 $spooled->write($contents->read(65_536));
             }
+            $spooled->rewind();
             $contents = $spooled;
+        } elseif ($contents instanceof StreamInterface && $contents->isSeekable()) {
+            $contents->rewind();
         }
         $size = is_string($contents) ? strlen($contents) : (int) $contents->getSize();
         if ($size > self::MOST) {
@@ -163,7 +166,8 @@ final class S3Disk implements Disk
             throw new FileNotFound($from);
         }
         // A copy can fail after S3 has answered 200, with the error in the body.
-        if ($response->getStatusCode() !== 200 || str_contains($body, '<Error>')) {
+        $error = self::xml($body);
+        if ($response->getStatusCode() !== 200 || $error !== false && $error->getName() === 'Error') {
             $this->fail($response, 'COPY', $from, $body);
         }
     }
@@ -186,9 +190,15 @@ final class S3Disk implements Disk
             if ($response->getStatusCode() !== 200) {
                 $this->fail($response, 'LIST', $prefix, $body);
             }
-            $list = @simplexml_load_string($body);
+            $list = self::xml($body);
             if ($list === false) {
                 throw new StorageException("S3 answered the listing of \"{$prefix}\" with something that is not XML.");
+            }
+            if ($list->getName() === 'Error') {
+                $this->fail($response, 'LIST', $prefix, $body);
+            }
+            if ($list->getName() !== 'ListBucketResult') {
+                throw new StorageException("S3 answered the listing of \"{$prefix}\" with unexpected XML.");
             }
             foreach ($list->Contents as $object) {
                 $key = (string) $object->Key;
@@ -291,7 +301,7 @@ final class S3Disk implements Disk
     private function fail(ResponseInterface $response, string $action, string $path, ?string $body = null): never
     {
         $body ??= (string) $response->getBody();
-        $error = @simplexml_load_string($body);
+        $error = self::xml($body);
         $said = $error === false ? '' : trim((string) $error->Code . ': ' . (string) $error->Message, ': ');
         throw new StorageException(
             "S3 refused {$action} \"{$path}\" in the bucket \"{$this->bucket}\": "
@@ -299,5 +309,10 @@ final class S3Disk implements Disk
             . ($said === '' ? '' : " {$said}")
             . '.',
         );
+    }
+
+    private static function xml(string $body): \SimpleXMLElement|false
+    {
+        return @simplexml_load_string($body, options: LIBXML_NONET);
     }
 }

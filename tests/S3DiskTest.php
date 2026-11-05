@@ -30,7 +30,10 @@ final class S3DiskTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('CRAB_TEST_S3_ENDPOINT') === false) {
+        foreach (['CRAB_TEST_S3_ENDPOINT', 'CRAB_TEST_S3_KEY', 'CRAB_TEST_S3_SECRET'] as $variable) {
+            if (getenv($variable) !== false && getenv($variable) !== '') {
+                continue;
+            }
             self::markTestSkipped(
                 'Set CRAB_TEST_S3_ENDPOINT, CRAB_TEST_S3_KEY and CRAB_TEST_S3_SECRET to test against a service.',
             );
@@ -179,7 +182,11 @@ final class S3DiskTest extends TestCase
     private function request(string $method, string $path): \Psr\Http\Message\ResponseInterface
     {
         $endpoint = (string) getenv('CRAB_TEST_S3_ENDPOINT');
-        $host = (string) parse_url($endpoint, PHP_URL_HOST) . ':' . (string) parse_url($endpoint, PHP_URL_PORT);
+        $host = (string) parse_url($endpoint, PHP_URL_HOST);
+        $port = parse_url($endpoint, PHP_URL_PORT);
+        if ($port !== null) {
+            $host .= ":{$port}";
+        }
         $headers = $this->signature()->headers($method, $host, $path, [], [], new \DateTimeImmutable());
         return new Client()->request($method, $endpoint . $path, headers: $headers);
     }

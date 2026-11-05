@@ -66,7 +66,7 @@ final class S3Plugin implements Plugin
             if (!is_bool($pathStyle)) {
                 throw new \LogicException("The disk \"{$name}\" has a \"path_style\" that is not true or false.");
             }
-            if (!is_int($timeout) && !is_float($timeout) || $timeout <= 0) {
+            if (!is_int($timeout) && !is_float($timeout) || !is_finite((float) $timeout) || $timeout <= 0) {
                 throw new \LogicException(
                     "The disk \"{$name}\" has a \"timeout\" that is not a number of seconds above zero.",
                 );

@@ -7,8 +7,10 @@ namespace Crab\S3\Tests;
 use Crab\App;
 use Crab\Config\Config;
 use Crab\Contracts\HttpClient\Client;
+use Crab\Contracts\HttpClient\Response;
 use Crab\Contracts\Storage\Storage;
 use Crab\Contracts\Storage\StorageException;
+use Crab\Http\Factory;
 use Crab\HttpClient\FakeClient;
 use Crab\S3\S3Disk;
 use Crab\S3\S3Plugin;
@@ -16,6 +18,7 @@ use Crab\Storage\StorageManager;
 use Crab\Storage\StoragePlugin;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * The driver as an application configures it, with requests answered in
@@ -109,6 +112,37 @@ final class S3PluginTest extends TestCase
         $this->disk([], $http)->copy('a.txt', 'b.txt');
     }
 
+    public function testAMoveDoesNotDeleteTheSourceWhenACopyErrorHasAnXmlNamespace(): void
+    {
+        $http = new FakeClient([
+            'PUT *' => FakeClient::response(
+                200,
+                '<Error xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Code>InternalError</Code><Message>Try again.</Message></Error>',
+            ),
+            'DELETE *' => 204,
+        ]);
+        $this->expectExceptionMessage('S3 refused COPY "a.txt" in the bucket "photos": 200 InternalError: Try again.');
+
+        try {
+            $this->disk([], $http)->move('a.txt', 'b.txt');
+        } finally {
+            self::assertCount(0, $http->sent('DELETE *'));
+        }
+    }
+
+    public function testAListingErrorInA200BodyIsAStorageFailure(): void
+    {
+        $http = new FakeClient([
+            'GET *' => FakeClient::response(
+                200,
+                '<Error xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Code>InternalError</Code><Message>Try again.</Message></Error>',
+            ),
+        ]);
+        $this->expectExceptionMessage('S3 refused LIST "" in the bucket "photos": 200 InternalError: Try again.');
+
+        [...$this->disk([], $http)->files()];
+    }
+
     public function testAServiceThatCannotBeReachedIsAStorageFailure(): void
     {
         $http = new FakeClient([
@@ -138,6 +172,8 @@ final class S3PluginTest extends TestCase
             [['buckt' => 'x'], 'The disk "cloud" has settings its driver does not know: "buckt"'],
             [['path_style' => 'yes'], 'The disk "cloud" has a "path_style" that is not true or false.'],
             [['timeout' => 0], 'The disk "cloud" has a "timeout" that is not a number of seconds above zero.'],
+            [['timeout' => NAN], 'The disk "cloud" has a "timeout" that is not a number of seconds above zero.'],
+            [['timeout' => INF], 'The disk "cloud" has a "timeout" that is not a number of seconds above zero.'],
         ] as [$settings, $said]) {
             try {
                 $this->disk($settings);
@@ -146,6 +182,15 @@ final class S3PluginTest extends TestCase
                 self::assertStringStartsWith($said, $refused->getMessage());
             }
         }
+    }
+
+    public function testAStreamIsSentFromItsBeginning(): void
+    {
+        $http = new RecordingClient();
+        $source = new Factory()->createStreamFromResource(popen('printf unsized', 'r'));
+        $this->disk([], $http)->write('unsized.txt', $source);
+
+        self::assertSame(0, $http->state->bodyPosition);
     }
 
     public function testItIsRegisteredAfterTheFrameworksStorage(): void
@@ -157,7 +202,7 @@ final class S3PluginTest extends TestCase
     /**
      * @param array<string, mixed> $settings
      */
-    private function disk(array $settings = [], ?FakeClient $http = null): S3Disk
+    private function disk(array $settings = [], ?Client $http = null): S3Disk
     {
         $app = new App(new Config(['storage' => ['disks' => ['cloud' => [...self::DISK, ...$settings]]]]));
         $app->register(new StoragePlugin());
@@ -167,5 +212,34 @@ final class S3PluginTest extends TestCase
         $disk = $app->container->get(Storage::class)->disk('cloud');
         self::assertInstanceOf(S3Disk::class, $disk);
         return $disk;
+    }
+}
+
+final class RecordingClient extends \Crab\HttpClient\Client
+{
+    public \stdClass $state;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->state = new \stdClass();
+    }
+
+    public function request(
+        string $method,
+        string $url,
+        array $query = [],
+        array $headers = [],
+        mixed $json = null,
+        array $form = [],
+        array $files = [],
+        string|StreamInterface|null $body = null,
+        ?\Crab\Engine\Async\Cancellation $cancellation = null,
+        string|StreamInterface|null $sink = null,
+        ?int $maxBytes = null,
+        bool $decode = true,
+    ): Response {
+        $this->state->bodyPosition = $body instanceof StreamInterface ? $body->tell() : null;
+        return FakeClient::response();
     }
 }
