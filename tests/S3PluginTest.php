@@ -73,7 +73,7 @@ final class S3PluginTest extends TestCase
     public function testAPathInTheEndpointIsKeptInRequestsAndUrls(): void
     {
         $http = new FakeClient(['PUT http://s3.example.test/api/photos/a%20b.txt' => '']);
-        $disk = $this->disk(['endpoint' => 'http://s3.example.test/api/'], $http);
+        $disk = $this->disk(['endpoint' => 'http://S3.EXAMPLE.TEST/api/'], $http);
 
         $disk->write('a b.txt', 'contents');
 

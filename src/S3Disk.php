@@ -68,7 +68,7 @@ final class S3Disk implements Disk
         ) {
             throw new \InvalidArgumentException("\"{$endpoint}\" is not an http or https address of an S3 service.");
         }
-        $host = $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+        $host = strtolower($parts['host']) . (isset($parts['port']) ? ':' . $parts['port'] : '');
         $this->scheme = $parts['scheme'];
         $this->host = $pathStyle ? $host : "{$bucket}.{$host}";
         $basePath = rtrim($parts['path'] ?? '', '/');
