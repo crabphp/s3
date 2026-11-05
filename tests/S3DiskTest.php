@@ -187,7 +187,8 @@ final class S3DiskTest extends TestCase
         if ($port !== null) {
             $host .= ":{$port}";
         }
-        $headers = $this->signature()->headers($method, $host, $path, [], [], new \DateTimeImmutable());
+        $basePath = rtrim((string) parse_url($endpoint, PHP_URL_PATH), '/');
+        $headers = $this->signature()->headers($method, $host, $basePath . $path, [], [], new \DateTimeImmutable());
         return new Client()->request($method, $endpoint . $path, headers: $headers);
     }
 
