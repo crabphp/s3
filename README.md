@@ -6,6 +6,8 @@ Use it when files must outlive one machine, when several servers share them, or 
 
 ## Installation
 
+Requires PHP 8.4 or later and Crab framework 0.6.x.
+
 ```sh
 composer require crabphp/s3
 ```
@@ -15,13 +17,16 @@ Register the plugin after the framework's, which include the storage it adds a d
 ```php
 // app.php
 use App\Setup;
+use Crab\App;
 use Crab\S3\S3Plugin;
 
-->withPlugins([
-    S3Plugin::class,
-])
-->withSetup(Setup::class)
+return App::configure(__DIR__)
+    ->withPlugins([S3Plugin::class])
+    ->withSetup(Setup::class)
+    ->create();
 ```
+
+`Setup` is the application's own `Crab\Contracts\Plugin`; omit `withSetup()` if it has no setup class.
 
 Then describe the bucket as a disk:
 
@@ -55,7 +60,7 @@ Nothing else changes: code written against `Crab\Contracts\Storage\Disk` works o
 | `prefix` | none | Put before every path, so several disks can share one bucket |
 | `url` | the bucket's own address | Where the bucket is served from to anyone, such as a CDN, for `url()` |
 | `token` | none | The session token of temporary credentials |
-| `timeout` | `60` | Seconds a request may take |
+| `timeout` | `60` | Seconds a request may take; finite and above zero |
 
 A path in `endpoint` is kept on requests and bucket URLs, which lets the service sit behind a reverse proxy.
 

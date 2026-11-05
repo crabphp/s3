@@ -27,7 +27,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  *     prefix        put before every path, to keep several disks in one bucket; none unless set
  *     url           where the bucket is served from to anyone, for url(); the bucket's own address unless set
  *     token         the session token of temporary credentials
- *     timeout       seconds a request may take; 60
+ *     timeout       seconds a request may take; 60, finite and above zero
  */
 final class S3Plugin implements Plugin
 {
