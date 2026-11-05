@@ -203,16 +203,16 @@ final class S3Disk implements Disk
             if ($list->getName() !== 'ListBucketResult') {
                 throw new StorageException("S3 answered the listing of \"{$prefix}\" with unexpected XML.");
             }
-            foreach ($list->Contents as $object) {
-                $key = (string) $object->Key;
+            foreach (self::xmlNodes($list, 'Contents') as $object) {
+                $key = self::xmlText($object, 'Key');
                 yield new File(
                     substr($key, strlen($this->prefix)),
-                    (int) $object->Size,
-                    $this->modified((string) $object->LastModified, 'LIST', $key),
+                    (int) self::xmlText($object, 'Size'),
+                    $this->modified(self::xmlText($object, 'LastModified'), 'LIST', $key),
                 );
             }
-            $query['continuation-token'] = (string) $list->NextContinuationToken;
-        } while ((string) $list->IsTruncated === 'true' && $query['continuation-token'] !== '');
+            $query['continuation-token'] = self::xmlText($list, 'NextContinuationToken');
+        } while (self::xmlText($list, 'IsTruncated') === 'true' && $query['continuation-token'] !== '');
     }
 
     public function url(string $path): string
@@ -346,5 +346,28 @@ final class S3Disk implements Disk
             }
         }
         return '';
+    }
+
+    /**
+     * @return list<\SimpleXMLElement>
+     */
+    private static function xmlNodes(\SimpleXMLElement $xml, string $name): array
+    {
+        $nodes = [];
+        foreach ($xml->{$name} as $node) {
+            $nodes[] = $node;
+        }
+        if ($nodes !== []) {
+            return $nodes;
+        }
+        foreach ($xml->getDocNamespaces(true) as $namespace) {
+            foreach ($xml->children($namespace)->{$name} as $node) {
+                $nodes[] = $node;
+            }
+            if ($nodes !== []) {
+                return $nodes;
+            }
+        }
+        return [];
     }
 }

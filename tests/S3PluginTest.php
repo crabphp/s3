@@ -154,6 +154,20 @@ final class S3PluginTest extends TestCase
         [...$this->disk([], $http)->files()];
     }
 
+    public function testAListingWithAPrefixedXmlNamespaceReturnsItsFiles(): void
+    {
+        $http = new FakeClient([
+            'GET *' => FakeClient::response(
+                200,
+                '<s3:ListBucketResult xmlns:s3="http://s3.amazonaws.com/doc/2006-03-01/"><s3:Contents><s3:Key>app/a.txt</s3:Key><s3:LastModified>2026-10-25T10:00:00.000Z</s3:LastModified><s3:Size>3</s3:Size></s3:Contents><s3:IsTruncated>false</s3:IsTruncated></s3:ListBucketResult>',
+            ),
+        ]);
+
+        $files = [...$this->disk(['prefix' => 'app'], $http)->files()];
+
+        self::assertSame(['a.txt'], array_map(static fn($file): string => $file->path, $files));
+    }
+
     public function testMalformedFileMetadataIsAStorageFailure(): void
     {
         $http = new FakeClient([
