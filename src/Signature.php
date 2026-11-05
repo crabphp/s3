@@ -55,7 +55,7 @@ final readonly class Signature
         }
         $signed = ['host' => $host];
         foreach ($headers as $name => $value) {
-            $signed[strtolower($name)] = trim((string) preg_replace('/\s+/', ' ', $value));
+            $signed[strtolower($name)] = self::headerValue($value);
         }
         ksort($signed, SORT_STRING);
         $scope = $this->scope($now);
@@ -84,7 +84,7 @@ final readonly class Signature
         $now = $now->setTimezone(new \DateTimeZone('UTC'));
         $signed = ['host' => $host];
         foreach ($headers as $name => $value) {
-            $signed[strtolower($name)] = trim($value);
+            $signed[strtolower($name)] = self::headerValue($value);
         }
         ksort($signed, SORT_STRING);
         $query += [
@@ -161,5 +161,10 @@ final readonly class Signature
     private function scope(\DateTimeImmutable $now): string
     {
         return $now->format('Ymd') . "/{$this->region}/s3/aws4_request";
+    }
+
+    private static function headerValue(string $value): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', $value));
     }
 }

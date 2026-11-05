@@ -120,6 +120,18 @@ final class SignatureTest extends TestCase
         ));
     }
 
+    public function testWhitespaceInSignedHeadersIsCanonicalized(): void
+    {
+        $plain = self::signature()->query('PUT', self::HOST, '/test.txt', [], 60, self::now(), [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+        $spaced = self::signature()->query('PUT', self::HOST, '/test.txt', [], 60, self::now(), [
+            'content-type' => '  text/plain;  charset=utf-8  ',
+        ]);
+
+        self::assertSame($plain, $spaced);
+    }
+
     private static function signature(): Signature
     {
         return new Signature('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'us-east-1');
