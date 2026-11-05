@@ -61,15 +61,16 @@ final class S3Disk implements Disk
         private readonly ?string $url = null,
     ) {
         $parts = parse_url($endpoint);
-        if (
-            !is_array($parts)
-            || !isset($parts['scheme'], $parts['host'])
-            || !in_array($parts['scheme'], ['http', 'https'], true)
-        ) {
+        $scheme = is_array($parts) && isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
+        if (!is_array($parts) || !isset($parts['host']) || !in_array($scheme, ['http', 'https'], true)) {
             throw new \InvalidArgumentException("\"{$endpoint}\" is not an http or https address of an S3 service.");
         }
-        $host = strtolower($parts['host']) . (isset($parts['port']) ? ':' . $parts['port'] : '');
-        $this->scheme = $parts['scheme'];
+        $port = $parts['port'] ?? null;
+        $host = strtolower($parts['host']);
+        if ($port !== null && !($scheme === 'http' && $port === 80 || $scheme === 'https' && $port === 443)) {
+            $host .= ":{$port}";
+        }
+        $this->scheme = $scheme;
         $this->host = $pathStyle ? $host : "{$bucket}.{$host}";
         $basePath = rtrim($parts['path'] ?? '', '/');
         $this->basePath = $basePath === '' ? '' : '/' . ltrim($basePath, '/');

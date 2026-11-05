@@ -183,8 +183,9 @@ final class S3DiskTest extends TestCase
     {
         $endpoint = (string) getenv('CRAB_TEST_S3_ENDPOINT');
         $host = (string) parse_url($endpoint, PHP_URL_HOST);
+        $scheme = strtolower((string) parse_url($endpoint, PHP_URL_SCHEME));
         $port = parse_url($endpoint, PHP_URL_PORT);
-        if ($port !== null) {
+        if ($port !== null && !($scheme === 'http' && $port === 80 || $scheme === 'https' && $port === 443)) {
             $host .= ":{$port}";
         }
         $basePath = rtrim((string) parse_url($endpoint, PHP_URL_PATH), '/');
