@@ -147,7 +147,7 @@ final class S3Disk implements Disk
         return new File(
             $path,
             (int) $response->getHeaderLine('Content-Length'),
-            new \DateTimeImmutable($response->getHeaderLine('Last-Modified') ?: '@0'),
+            $this->modified($response->getHeaderLine('Last-Modified'), 'HEAD', $path),
             $type === '' ? null : $type,
         );
     }
@@ -208,7 +208,7 @@ final class S3Disk implements Disk
                 yield new File(
                     substr($key, strlen($this->prefix)),
                     (int) $object->Size,
-                    new \DateTimeImmutable((string) $object->LastModified),
+                    $this->modified((string) $object->LastModified, 'LIST', $key),
                 );
             }
             $query['continuation-token'] = (string) $list->NextContinuationToken;
@@ -314,6 +314,18 @@ final class S3Disk implements Disk
             . ($said === '' ? '' : " {$said}")
             . '.',
         );
+    }
+
+    private function modified(string $value, string $action, string $path): \DateTimeImmutable
+    {
+        try {
+            return new \DateTimeImmutable($value === '' ? '@0' : $value);
+        } catch (\Exception $error) {
+            throw new StorageException(
+                "S3 answered {$action} \"{$path}\" in the bucket \"{$this->bucket}\" with an invalid Last-Modified date.",
+                previous: $error,
+            );
+        }
     }
 
     private static function xml(string $body): \SimpleXMLElement|false

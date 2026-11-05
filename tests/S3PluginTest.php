@@ -154,6 +154,18 @@ final class S3PluginTest extends TestCase
         [...$this->disk([], $http)->files()];
     }
 
+    public function testMalformedFileMetadataIsAStorageFailure(): void
+    {
+        $http = new FakeClient([
+            'HEAD *' => FakeClient::response(200, '', ['Content-Length' => '0', 'Last-Modified' => 'not a date']),
+        ]);
+        $this->expectExceptionMessage(
+            'S3 answered HEAD "a.txt" in the bucket "photos" with an invalid Last-Modified date.',
+        );
+
+        $this->disk([], $http)->file('a.txt');
+    }
+
     public function testAServiceThatCannotBeReachedIsAStorageFailure(): void
     {
         $http = new FakeClient([
