@@ -221,6 +221,11 @@ final class S3PluginTest extends TestCase
         }
     }
 
+    public function testATimeoutFromAnEnvironmentVariableMayBeANumericString(): void
+    {
+        self::assertInstanceOf(S3Disk::class, $this->disk(['timeout' => '2.5']));
+    }
+
     public function testAStreamIsSentFromItsBeginning(): void
     {
         $http = new RecordingClient();

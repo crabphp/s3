@@ -63,16 +63,22 @@ final class S3Plugin implements Plugin
             $endpoint = self::text($name, $settings, 'endpoint');
             $pathStyle = $settings['path_style'] ?? $endpoint !== null;
             $timeout = $settings['timeout'] ?? 60;
+            $seconds = null;
+            if (is_int($timeout) || is_float($timeout)) {
+                $seconds = (float) $timeout;
+            } elseif (is_string($timeout) && is_numeric($timeout)) {
+                $seconds = (float) $timeout;
+            }
             if (!is_bool($pathStyle)) {
                 throw new \LogicException("The disk \"{$name}\" has a \"path_style\" that is not true or false.");
             }
-            if (!is_int($timeout) && !is_float($timeout) || !is_finite((float) $timeout) || $timeout <= 0) {
+            if ($seconds === null || !is_finite($seconds) || $seconds <= 0) {
                 throw new \LogicException(
                     "The disk \"{$name}\" has a \"timeout\" that is not a number of seconds above zero.",
                 );
             }
             return new S3Disk(
-                $container->get(Client::class)->timeout((float) $timeout),
+                $container->get(Client::class)->timeout($seconds),
                 new Signature(
                     (string) $settings['key'],
                     (string) $settings['secret'],
