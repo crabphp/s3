@@ -57,6 +57,8 @@ Nothing else changes: code written against `Crab\Contracts\Storage\Disk` works o
 | `token` | none | The session token of temporary credentials |
 | `timeout` | `60` | Seconds a request may take |
 
+A path in `endpoint` is kept on requests and bucket URLs, which lets the service sit behind a reverse proxy.
+
 A setting the driver does not know, or a missing key, secret or bucket, stops the disk with its name before any request is sent.
 
 ```php

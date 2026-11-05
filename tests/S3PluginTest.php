@@ -70,6 +70,17 @@ final class S3PluginTest extends TestCase
         self::assertStringContainsString('X-Amz-Expires=600', $signed);
     }
 
+    public function testAPathInTheEndpointIsKeptInRequestsAndUrls(): void
+    {
+        $http = new FakeClient(['PUT http://s3.example.test/api/photos/a%20b.txt' => '']);
+        $disk = $this->disk(['endpoint' => 'http://s3.example.test/api/'], $http);
+
+        $disk->write('a b.txt', 'contents');
+
+        self::assertSame('http://s3.example.test/api/photos/a%20b.txt', $disk->url('a b.txt'));
+        self::assertSame('/api/photos/a%20b.txt', $http->sent()[0]->getUri()->getPath());
+    }
+
     public function testAListingIsReadAPageAtATime(): void
     {
         $page = static fn(array $keys, ?string $next): string => (

@@ -40,6 +40,7 @@ final class S3Disk implements Disk
 
     private readonly string $scheme;
     private readonly string $host;
+    private readonly string $basePath;
     private readonly string $prefix;
 
     /**
@@ -70,6 +71,8 @@ final class S3Disk implements Disk
         $host = $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
         $this->scheme = $parts['scheme'];
         $this->host = $pathStyle ? $host : "{$bucket}.{$host}";
+        $basePath = rtrim($parts['path'] ?? '', '/');
+        $this->basePath = $basePath === '' ? '' : '/' . ltrim($basePath, '/');
         $prefix = trim($prefix, '/');
         $this->prefix = $prefix === '' ? '' : Path::file($prefix) . '/';
     }
@@ -183,7 +186,7 @@ final class S3Disk implements Disk
     public function files(string $prefix = ''): iterable
     {
         $query = ['list-type' => '2', 'prefix' => $this->prefix . Path::prefix($prefix)];
-        $bucket = $this->pathStyle ? '/' . rawurlencode($this->bucket) : '/';
+        $bucket = $this->basePath . ($this->pathStyle ? '/' . rawurlencode($this->bucket) : '/');
         do {
             $response = $this->send('GET', $bucket, $query);
             $body = (string) $response->getBody();
@@ -253,7 +256,7 @@ final class S3Disk implements Disk
     private function object(string $path): string
     {
         $key = self::encoded($this->prefix . Path::file($path));
-        return $this->pathStyle ? '/' . rawurlencode($this->bucket) . $key : $key;
+        return $this->basePath . ($this->pathStyle ? '/' . rawurlencode($this->bucket) . $key : $key);
     }
 
     /**
