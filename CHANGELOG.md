@@ -2,7 +2,7 @@
 
 Crab S3 follows [semantic versioning](https://semver.org). Before 1.0, a minor version may break what an application writes; the entry says what to change.
 
-## Unreleased
+## 0.1.1 — 2026-11-07
 
 - **S3 responses are checked before a move removes its source:** namespaced or unconfirmed copy responses, malformed listings and invalid file metadata now become storage failures.
 - **Endpoint paths are preserved:** an S3 service behind a reverse proxy may include a path in `endpoint`; schemes, hosts and default ports are normalized before signing.
