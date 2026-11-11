@@ -6,7 +6,7 @@ Use it when files must outlive one machine, when several servers share them, or 
 
 ## Installation
 
-Requires PHP 8.4 or later and Crab framework 0.6.x.
+Requires PHP 8.4 or later and Crab framework 0.7.x.
 
 ```sh
 composer require crabphp/s3
